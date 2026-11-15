@@ -1,9 +1,4 @@
-#include <iostream>
-#include <arpa/inet.h>
-#include <sys/select.h>
-#include <cstring>
-#include <unistd.h>
-#include <vector>
+#include "includes.h"
 
 #define PORT 8080
 #define MAX_CLIENTS 3
