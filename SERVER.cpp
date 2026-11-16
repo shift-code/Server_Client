@@ -1,6 +1,4 @@
 #include "includes.h"
-
-#define PORT 8080
 #define MAX_CLIENTS 3
 
 int main(){
@@ -24,7 +22,7 @@ fd_set read_fds;
 while(1){
 FD_ZERO(&read_fds);
 FD_SET(sock,&read_fds);
-int max_fd;
+int max_fd = sock;
 
 for(int sd : clients){
 	FD_SET(sd,&read_fds);
@@ -38,19 +36,18 @@ if(FD_ISSET(sock,&read_fds)){
 	std::cout<<"New client with FD: "<<client_fd<<std::endl;
 	std::string msg = "===== Hi!!! =====\n==Welcome to our server==\n==Write Something==\n";
 	send(client_fd,msg.c_str(),msg.length(),0);
-	for(int i = 0;i<MAX_CLIENTS;++i){
-		int sd = clients[i];
-		if(sd == 0){
-			clients.insert(clients.begin()+i,sd);
-			break;
-		}
+	if(clients.size()<MAX_CLIENTS){
+		clients.push_back(client_fd);
+	}
+	else{
+		close(client_fd);
 	}
 }
 
-for(int i = 0;i<MAX_CLIENTS;++i){
+for(size_t i = 0;i<clients.size();++i){
 	int sd = clients[i];
 	if(FD_ISSET(sd,&read_fds)){
-		int rvalue = read(sock,buf,1023);
+		int rvalue = read(sd,buf,1023);
 		if(rvalue <= 0){
 			std::cout<<"Client disconnected with FD: "<<sd<<std::endl;
 			close(sd);
@@ -58,10 +55,11 @@ for(int i = 0;i<MAX_CLIENTS;++i){
 			--i;
 		}
 		else{
+			buf[rvalue] = '\0';
 			std::string msg = "[CLIENT: "+std::to_string(sd)+"] ---> "+std::string(buf);
 			for(int other : clients){
 				if(other != sd){
-					send(sock,msg.c_str(),msg.length(),0);
+					send(other,msg.c_str(),msg.length(),0);
 				}
 			}
 		}
@@ -69,7 +67,5 @@ for(int i = 0;i<MAX_CLIENTS;++i){
 }
 
 } 
-
-
 return 0;
 }
